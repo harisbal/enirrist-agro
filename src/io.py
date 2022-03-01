@@ -1,11 +1,13 @@
+import itertools
 import pandas as pd
 import geopandas as gpd
-from app import cache
+
+# from app import cache
 
 import pickle
 
 
-@cache.memoize(timeout=60)
+# @cache.memoize(timeout=3600)
 def fetch_data():
 
     try:
@@ -46,6 +48,124 @@ def fetch_data():
         data["prods"] = productions
         data["cons"] = consumptions
 
+        # TODO move approprietly
+        # Initiate furness
+        cols = ["product_name", "nuts"]
+        prods = productions.groupby(cols).sum()
+        cons = consumptions.groupby(cols).sum()
+
+        # Normalise based on consumption
+        df = pd.merge(
+            prods,
+            cons,
+            how="inner",
+            left_index=True,
+            right_index=True,
+            suffixes=("_prod", "_cons"),
+        )
+
+        dfs = []
+        for k, g in df.groupby("product_name"):
+            g["quantity_tn_prod"] *= (
+                g["quantity_tn_cons"].sum() / g["quantity_tn_prod"].sum()
+            )
+            dfs.append(g)
+        df = pd.concat(dfs)
+
+        prods = df.groupby(["product_name", "nuts"])["quantity_tn_prod"].sum()
+        prods
+        prods.name = "quantity_tn"
+        cons = df.groupby(["product_name", "nuts"])["quantity_tn_cons"].sum()
+        cons.name = "quantity_tn"
+
+        nuts_el = nuts[(nuts["LEVL_CODE"] == 3) & (nuts["CNTR_CODE"] == "EL")]
+
+        seeds = {}
+        pairs = list(itertools.product(nuts_el.index, repeat=2))
+        products = cons.index.unique("product_name")
+
+        for p in products:
+            seeds[p] = {}
+            for pair in pairs:
+                src, tgt = pair
+                try:
+                    seeds[p][pair] = (
+                        prods.loc[p, src] * cons.loc[p, tgt] * distr.loc[pair]
+                    )
+                except KeyError:
+                    continue
+
+        seed = pd.DataFrame(seeds).stack()
+        cols = ["origin_nuts", "destination_nuts", "product_name"]
+        seed.index.names = cols
+        seed.name = "quantity_tn"
+
+        # TODO think about
+        seed = (
+            seed.unstack("destination_nuts")
+            .fillna(0.001)
+            .stack("destination_nuts")
+            .groupby(cols)
+            .sum()
+        )
+
+        ms = []
+
+        tol = 0.05
+
+        prods = prods.rename_axis(index={"nuts": "origin_nuts"})
+        cons = cons.rename_axis(index={"nuts": "destination_nuts"})
+
+        # conv = {}
+
+        for k, m in seed.groupby("product_name"):
+            m = seed.xs(k, level="product_name")
+
+            constrs = itertools.cycle(
+                [prods.xs(k, level="product_name"), cons.xs(k, level="product_name")]
+            )
+            n = 0
+            while n <= 500:
+                constr = next(constrs)
+
+                grps = constr.index.names
+                f = constr / m.groupby(grps).sum()
+
+                if (1 - f).abs().max() <= tol:
+                    break
+
+                # todo unstacking is not safe
+                cols_unstack = list(set(m.index.names) - set(f.index.names))
+
+                if len(constr.index.names) > 1:
+                    m = (
+                        m.unstack(cols_unstack)
+                        .reorder_levels(constr.index.names)
+                        .mul(f, axis=0)
+                        .stack(cols_unstack)
+                    )
+                else:
+                    m = m.unstack(cols_unstack).mul(f, axis=0).stack(cols_unstack)
+
+                n += 1
+                if n == 501:
+                    print(f"{k} not converged")
+                # conv[(k, '-'.join(list(grps)))] = f
+
+            m.name = "quantity_tn"
+            m = m.to_frame()
+            m["product_name"] = k
+            m = m.groupby(seed.index.names).sum().squeeze()
+            ms.append(m)
+
+        ods = (
+            pd.concat(ms)
+            .groupby(["product_name", "origin_nuts", "destination_nuts"])
+            .sum()
+        )
+
+        data["ods"] = ods
+
         with open("filename.pickle", "wb") as handle:
             pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -81,11 +201,15 @@ def clean_prodcons(df, cat_cols):
         df[c] = df[c].astype("category")
 
     df["week"] = df["week"].str[1:].astype(int)
+    df["day"] = df["week"] * 7
+    df["date"] = pd.to_datetime(df["year"], format="%Y") + pd.to_timedelta(
+        df["day"], unit="D"
+    )
 
     for c in ["product_group", "product_name"]:
         df[c] = df[c].str.strip()
 
-    df = df.groupby(["year", "week", "nuts", "product_group", "product_name"])[
+    df = df.groupby(["date", "nuts", "product_group", "product_name"])[
         "quantity_tn"
     ].sum()
     return df

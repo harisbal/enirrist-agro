@@ -4,21 +4,17 @@ import plotly.express as px
 import dash
 from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
-
 from src.io import fetch_data
 
 dash.register_page(__name__)
 
 data = fetch_data()
-
 nuts = data["nuts"]
 distr = data["distr"]
 prods = data["prods"]
 cons = data["cons"]
 
-cols = ["product_name", "nuts"]
-prods = data["prods"].groupby(cols).sum()
-cons = data["cons"].groupby(cols).sum()
+nuts = nuts[(nuts["LEVL_CODE"] == 3) & (nuts["CNTR_CODE"] == "EL")]
 
 
 def layout():
@@ -27,109 +23,229 @@ def layout():
         [
             dbc.CardBody(
                 [
-                    dbc.Card(
+                    dbc.Row(
                         [
-                            dbc.Card(
-                                [dcc.Dropdown([2018], value=2018)],
-                                className="mb-3",
+                            dbc.Col(
+                                [
+                                    dbc.Label("Direction"),
+                                    dcc.Dropdown(
+                                        options=[
+                                            {
+                                                "label": "Production",
+                                                "value": "production",
+                                            },
+                                            {
+                                                "label": "Consumption",
+                                                "value": "consumption",
+                                            },
+                                        ],
+                                        value="production",
+                                        id="input-direction",
+                                    ),
+                                ],
+                                width=2,
                             ),
-                            dbc.Card(
+                            dbc.Col(
+                                [
+                                    dbc.Label("Year"),
+                                    dbc.Select(
+                                        id="input-year",
+                                        options=[
+                                            {"label": "2018", "value": 2018},
+                                        ],
+                                        value=2018,
+                                    ),
+                                ],
+                                width=2,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Months"),
+                                    dcc.RangeSlider(
+                                        min=1,
+                                        max=12,
+                                        value=(1, 12),
+                                        step=1,
+                                        id="input-months",
+                                    ),
+                                ]
+                            ),
+                        ],
+                    ),
+                    dbc.Row(
+                        dbc.Col(
+                            [
+                                dbc.Label("NUTS"),
                                 dcc.Dropdown(
-                                    prods.index.unique("product_name").unique(),
+                                    options=nuts.index.unique(),
                                     multi=True,
-                                    id="input-products",
-                                )
+                                    id="input-nuts",
+                                ),
+                            ]
+                        )
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Label("Grouping level"),
+                                    dcc.Dropdown(
+                                        [
+                                            {
+                                                "label": "Groups",
+                                                "value": "product_group",
+                                            },
+                                            {
+                                                "label": "Individual",
+                                                "value": "product_name",
+                                            },
+                                        ],
+                                        value="product_group",
+                                        id="input-products-type",
+                                    ),
+                                ],
+                                width=2,
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Label("Products"),
+                                    dcc.Dropdown(
+                                        multi=True,
+                                        id="input-products",
+                                    ),
+                                ]
                             ),
                         ]
                     ),
                 ],
-            )
+            ),
+            dbc.CardFooter(dbc.Button("Update", id="input-update")),
         ]
     )
 
-    layout = html.Div(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(controls),
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.Accordion(
+    layout = (
+        html.Div(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Accordion(dbc.AccordionItem(controls, title="Controls"))
+                        ),
+                    ],
+                    class_name="py-2",
+                ),
+                dbc.Card(
+                    dbc.CardBody(
+                        dbc.Row(
                             [
-                                dbc.AccordionItem(
-                                    dbc.Row(
-                                        [
-                                            dbc.Col(
-                                                dcc.Graph(
-                                                    id="map-prods",
-                                                    style={"height": "80vh"},
-                                                ),
-                                                width=6,
-                                            ),
-                                            dbc.Col(
-                                                dcc.Graph(
-                                                    id="map-cons",
-                                                    style={"height": "80vh"},
-                                                ),
-                                                width=6,
-                                            ),
-                                        ]
-                                    ),
-                                    title="Maps",
+                                dbc.Col(
+                                    [
+                                        dbc.Row(
+                                            dbc.RadioItems(
+                                                options=[
+                                                    {"label": "Time", "value": "date"},
+                                                    {"label": "Nuts", "value": "nuts"},
+                                                ],
+                                                value="nuts",
+                                                inline=True,
+                                                id="input-graph-type",
+                                            )
+                                        ),
+                                        dbc.Row(dcc.Graph(id="gen-graph")),
+                                    ],
+                                    width=8,
                                 ),
-                                dbc.AccordionItem(html.Div()),
+                                dbc.Col(
+                                    dcc.Graph(
+                                        style={"height": "100%"},
+                                        id="gen-map",
+                                    ),
+                                    width=4,
+                                ),
                             ],
                         )
                     ),
-                ]
-            ),
-        ]
+                    class_name="my-2",
+                ),
+            ]
+        ),
     )
 
     return layout
 
 
+@callback(Output("input-products", "options"), Input("input-products-type", "value"))
+def change_products_type(products_type):
+    if products_type:
+        return prods.index.unique(products_type)
+    else:
+        return dash.no_update
+
+
 @callback(
-    Output("map-prods", "figure"),
-    Output("map-cons", "figure"),
-    Input("input-products", "value"),
+    Output("gen-graph", "figure"),
+    Output("gen-map", "figure"),
+    Input("input-update", "n_clicks"),
+    Input("input-graph-type", "value"),
+    State("input-direction", "value"),
+    State("input-year", "value"),
+    State("input-months", "value"),
+    State("input-nuts", "value"),
+    State("input-products-type", "value"),
+    State("input-products", "value"),
 )
-def update_map(products):
+def update_view(
+    n, graph_type, direction, year, months, sel_nuts, products_type, products
+):
 
-    figs = []
-    for df in [prods, cons]:
-        dff = df.copy()
-        if products:
-            dff = df.loc[products]
+    if direction == "production":
+        df = prods.copy()
+    else:
+        df = cons.copy()
 
-        dff = dff.groupby("nuts").sum()
+    df = (
+        df.groupby(["date", "nuts", products_type])
+        .sum()
+        .loc[
+            f"{year}-{months[0]}-1":f"{year}-{months[1]}-31",
+            sel_nuts or slice(None),
+            products or slice(None),
+        ]
+    )
 
-        nutsf = pd.merge(
-            dff,
-            nuts.rename_axis(index={"id": "nuts"}).geometry,
-            left_index=True,
-            right_index=True,
-            how="left",
-        )
+    df_map = df.groupby("nuts").sum()
+    nutsf = pd.merge(
+        df_map,
+        nuts.rename_axis(index={"id": "nuts"}).geometry,
+        left_index=True,
+        right_index=True,
+        how="left",
+    )
 
-        nutsf = gpd.GeoDataFrame(nutsf, geometry=nutsf.geometry)
-        # nutsf = nuts.loc[prodsf.index.unique("nuts")]
-        bbox = nutsf.total_bounds
-        center = {"lat": (bbox[1] + bbox[3]) / 2, "lon": (bbox[0] + bbox[2]) / 2}
+    nutsf = gpd.GeoDataFrame(nutsf, geometry=nutsf.geometry)
+    # nutsf = nuts.loc[prodsf.index.unique("nuts")]
+    bbox = nutsf.total_bounds
+    center = {"lat": (bbox[1] + bbox[3]) / 2, "lon": (bbox[0] + bbox[2]) / 2}
 
-        fig = px.choropleth_mapbox(
-            nutsf,
-            geojson=nutsf.geometry,
-            locations=nutsf.index,
-            color="quantity_tn",
-            center=center,
-            zoom=5,
-            mapbox_style="carto-positron",
-        )
+    map = px.choropleth_mapbox(
+        nutsf,
+        geojson=nutsf.geometry,
+        locations=nutsf.index,
+        color="quantity_tn",
+        center=center,
+        zoom=5,
+        mapbox_style="carto-positron",
+    )
 
-        figs.append(fig)
+    graph = px.bar(
+        df.groupby([graph_type, products_type]).sum().reset_index(),
+        x=graph_type,
+        y="quantity_tn",
+        color=products_type,
+    )
 
-    return figs[0], figs[1]
+    graph.update_layout(
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+
+    return graph, map
