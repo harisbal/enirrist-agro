@@ -1,6 +1,7 @@
 import itertools
 import pandas as pd
 import geopandas as gpd
+from fuzzywuzzy import process
 
 # from app import cache
 
@@ -73,12 +74,35 @@ def fetch_data():
         df = pd.concat(dfs)
 
         prods = df.groupby(["product_name", "nuts"])["quantity_tn_prod"].sum()
-        prods
         prods.name = "quantity_tn"
         cons = df.groupby(["product_name", "nuts"])["quantity_tn_cons"].sum()
         cons.name = "quantity_tn"
 
         nuts_el = nuts[(nuts["LEVL_CODE"] == 3) & (nuts["CNTR_CODE"] == "EL")]
+
+        friction = pd.read_csv(
+            r"./assets/data/friction/exponential_function_74.csv", delimiter="\t"
+        )
+        friction.index = friction.columns.tolist()
+        friction.index.name = "origin_nuts"
+        friction.columns.name = "destination_nuts"
+        d = (
+            nuts[(nuts["LEVL_CODE"] == 3) & (nuts["CNTR_CODE"] == "EL")]
+            .set_index("NUTS_NAME")["NUTS_ID"]
+            .to_dict()
+        )
+
+        l = friction.columns.tolist()
+        dd = {}
+        for e in l:
+            n, v = process.extractOne(e, list(d.keys()))
+            dd[e] = n
+
+        friction = (
+            friction.rename(columns=dd, index=dd).rename(columns=d, index=d).stack()
+        )
+        friction = friction.groupby(["origin_nuts", "destination_nuts"]).mean()
+        friction
 
         seeds = {}
         pairs = list(itertools.product(nuts_el.index, repeat=2))

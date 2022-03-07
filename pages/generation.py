@@ -77,7 +77,9 @@ def layout():
                             [
                                 dbc.Label("NUTS"),
                                 dcc.Dropdown(
-                                    options=nuts.index.unique(),
+                                    options=nuts.sort_values("NUTS_NAME")[
+                                        "NUTS_NAME"
+                                    ].to_dict(),
                                     multi=True,
                                     id="input-nuts",
                                 ),
@@ -207,7 +209,7 @@ def update_view(
         df.groupby(["date", "nuts", products_type])
         .sum()
         .loc[
-            f"{year}-{months[0]}-1":f"{year}-{months[1]}-31",
+            f"{year}-{months[0]}-1":f"{year}-{months[1]}-28",
             sel_nuts or slice(None),
             products or slice(None),
         ]
@@ -237,8 +239,13 @@ def update_view(
         mapbox_style="carto-positron",
     )
 
+    dfp = df.groupby([graph_type, products_type]).sum().reset_index()
+
+    if graph_type == "nuts":
+        dfp["nuts"] = dfp["nuts"].replace(nuts["NUTS_NAME"].to_dict())
+
     graph = px.bar(
-        df.groupby([graph_type, products_type]).sum().reset_index(),
+        dfp,
         x=graph_type,
         y="quantity_tn",
         color=products_type,

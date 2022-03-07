@@ -78,6 +78,7 @@ def layout():
                                                     style={"height": "80vh"},
                                                 ),
                                             ),
+                                            dbc.Col(dcc.Graph(id="distr-heatmap")),
                                         ]
                                     ),
                                     title="Map",
@@ -91,6 +92,20 @@ def layout():
     )
 
     return layout
+
+
+@callback(Output("distr-heatmap", "figure"), Input("input-products", "value"))
+def update_heatmap(products):
+    thresh = 10
+    df = ods.loc[products or slice(None)].reset_index()
+
+    df = df.groupby(["origin_nuts", "destination_nuts"]).sum().reset_index()
+    df["origin_nuts"] = df["origin_nuts"].replace(nuts["NUTS_NAME"].to_dict())
+    df["destination_nuts"] = df["destination_nuts"].replace(nuts["NUTS_NAME"].to_dict())
+    df = df.groupby(["origin_nuts", "destination_nuts"]).sum()
+    df = df[df > thresh].unstack()
+    fig = px.imshow(df)
+    return fig
 
 
 @callback(
