@@ -6,7 +6,16 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 from src.io import fetch_data
 
-dash.register_page(__name__)
+# dash.register_page(__name__)
+dash.register_page(
+    __name__,
+    path="/generation",
+    name="generation",
+    description="Παραγωγή/Κατανάλωση",
+    order=0,
+    icon="fa fa-farm",
+)
+
 
 data = fetch_data()
 nuts = data["nuts"]
@@ -27,15 +36,15 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Direction"),
+                                    dbc.Label("Παραγωγές/Ηαταναλώσεις"),
                                     dcc.Dropdown(
                                         options=[
                                             {
-                                                "label": "Production",
+                                                "label": "Παραγωγές",
                                                 "value": "production",
                                             },
                                             {
-                                                "label": "Consumption",
+                                                "label": "Καταναλώσεις",
                                                 "value": "consumption",
                                             },
                                         ],
@@ -47,7 +56,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Year"),
+                                    dbc.Label("Έτος"),
                                     dbc.Select(
                                         id="input-year",
                                         options=[
@@ -60,7 +69,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Months"),
+                                    dbc.Label("Περίοδος ανάλυσης"),
                                     dcc.RangeSlider(
                                         min=1,
                                         max=12,
@@ -75,7 +84,7 @@ def layout():
                     dbc.Row(
                         dbc.Col(
                             [
-                                dbc.Label("NUTS"),
+                                dbc.Label("Γεωγραφικές ενότητρες - NUTS"),
                                 dcc.Dropdown(
                                     options=nuts.sort_values("NUTS_NAME")[
                                         "NUTS_NAME"
@@ -90,15 +99,15 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Grouping level"),
+                                    dbc.Label("Ομαδοποίηση προϊόντων"),
                                     dcc.Dropdown(
                                         [
                                             {
-                                                "label": "Groups",
+                                                "label": "Ομάδες",
                                                 "value": "product_group",
                                             },
                                             {
-                                                "label": "Individual",
+                                                "label": "Ξεχωριστά",
                                                 "value": "product_name",
                                             },
                                         ],
@@ -110,7 +119,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Products"),
+                                    dbc.Label("Προϊόντα"),
                                     dcc.Dropdown(
                                         multi=True,
                                         id="input-products",
@@ -121,7 +130,7 @@ def layout():
                     ),
                 ],
             ),
-            dbc.CardFooter(dbc.Button("Update", id="input-update")),
+            dbc.CardFooter(dbc.Button("Ενημέρωση", id="input-update")),
         ]
     )
 
@@ -143,15 +152,24 @@ def layout():
                                 dbc.Col(
                                     [
                                         dbc.Row(
-                                            dbc.RadioItems(
-                                                options=[
-                                                    {"label": "Time", "value": "date"},
-                                                    {"label": "Nuts", "value": "nuts"},
-                                                ],
-                                                value="nuts",
-                                                inline=True,
-                                                id="input-graph-type",
-                                            )
+                                            [
+                                                dbc.Label("Ανάλυση κατά:"),
+                                                dbc.RadioItems(
+                                                    options=[
+                                                        {
+                                                            "label": "Χρόνο",
+                                                            "value": "date",
+                                                        },
+                                                        {
+                                                            "label": "Γεωγραφικές ενότητες",
+                                                            "value": "nuts",
+                                                        },
+                                                    ],
+                                                    value="nuts",
+                                                    inline=True,
+                                                    id="input-graph-type",
+                                                ),
+                                            ]
                                         ),
                                         dbc.Row(dcc.Graph(id="gen-graph")),
                                     ],
@@ -242,7 +260,7 @@ def update_view(
     dfp = df.groupby([graph_type, products_type]).sum().reset_index()
 
     if graph_type == "nuts":
-        dfp["nuts"] = dfp["nuts"].replace(nuts["NUTS_NAME"].to_dict())
+        dfp["nuts"] = dfp["nuts"].replace(nuts["NUTS_NAME"].to_dict()).str[0:20]
 
     graph = px.bar(
         dfp,

@@ -9,7 +9,16 @@ import dash_bootstrap_components as dbc
 from src.io import fetch_data
 from src.utils import rename_nuts, pairwise
 
-dash.register_page(__name__)
+# dash.register_page(__name__)
+dash.register_page(
+    __name__,
+    path="/assignment",
+    name="assignment",
+    description="Οδικό δικτυο",
+    order=2,
+    icon="fa fa-road",
+)
+
 
 data = fetch_data()
 epsgs = data["epsgs"]

@@ -22,12 +22,12 @@ load_figure_template("minty")
 app = dash.Dash(
     __name__,
     plugins=[dl.plugins.pages],
-    external_stylesheets=[dbc.themes.MINTY, dbc_css],
+    external_stylesheets=[dbc.themes.MINTY, dbc.icons.FONT_AWESOME, dbc_css],
 )
 
 # cache = Cache(app.server, config={"CACHE_TYPE": "filesystem", "CACHE_DIR": "cache"})
 
-dash.register_page("home", layout="We're home!", path="/")
+# dash.register_page("home", layout="We're home!", path="/")
 
 navbar = dbc.NavbarSimple(
     [],
@@ -40,7 +40,7 @@ navbar = dbc.NavbarSimple(
 navbuttons = dbc.ButtonGroup(
     [
         dbc.Button(
-            page["name"],
+            page["description"],
             href=page["path"],
             outline=True,
             color="primary",

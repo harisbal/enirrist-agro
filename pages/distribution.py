@@ -7,7 +7,15 @@ import dash_bootstrap_components as dbc
 from src.io import fetch_data
 from src.utils import rename_nuts
 
-dash.register_page(__name__)
+# dash.register_page(__name__)
+dash.register_page(
+    __name__,
+    path="/distribution",
+    name="distribution",
+    description="Γεωγραφική Κατανομή",
+    order=1,
+    icon="fa fa-table",
+)
 
 data = fetch_data()
 nuts = data["nuts"]
@@ -43,15 +51,15 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Direction"),
+                                    dbc.Label("Παραγωγές/Καταναλώσεις"),
                                     dcc.Dropdown(
                                         options=[
                                             {
-                                                "label": "Origins",
+                                                "label": "Παραγωγές",
                                                 "value": "origin",
                                             },
                                             {
-                                                "label": "Destinations",
+                                                "label": "Καταναλώσεις",
                                                 "value": "destination",
                                             },
                                         ],
