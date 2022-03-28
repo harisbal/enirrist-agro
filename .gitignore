@@ -61,3 +61,4 @@ flask_session/
 .ipynb_checkpoints/
 
 data/
+cache/

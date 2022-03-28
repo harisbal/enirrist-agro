@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 # from dash.long_callback import DiskcacheLongCallbackManager
 
-from flask_caching import Cache
+# from flask_caching import Cache
 
 from dash_bootstrap_templates import load_figure_template
 
