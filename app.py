@@ -28,10 +28,12 @@ app = dash.Dash(
 # cache = Cache(app.server, config={"CACHE_TYPE": "filesystem", "CACHE_DIR": "cache"})
 
 # dash.register_page("home", layout="We're home!", path="/")
+LOGO = r"./assets/logo.png"
+
 
 navbar = dbc.NavbarSimple(
-    [],
-    brand="ENIRRIST / Εφαρμογή Αγροτικών προιόντων",
+    [html.Img(src=LOGO)],
+    brand="Εφαρμογή Αγροτικών Προϊόντων",
     color="primary",
     dark=True,
     className="mb-2",

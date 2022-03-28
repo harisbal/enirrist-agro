@@ -42,7 +42,7 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Year"),
+                                    dbc.Label("Έτος"),
                                     dbc.Select(
                                         id="input-year",
                                         options=[
@@ -71,7 +71,7 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Products"),
+                                    dbc.Label("Προϊντα"),
                                     dcc.Dropdown(
                                         options=prods.index.unique(
                                             level="product_name"
@@ -85,7 +85,7 @@ def layout():
                     ),
                 ],
             ),
-            dbc.CardFooter(dbc.Button("Update", id="input-update")),
+            dbc.CardFooter(dbc.Button("Ενημέρωση", id="input-update")),
         ]
     )
 
@@ -96,7 +96,7 @@ def layout():
                     dbc.Col(
                         dbc.Accordion(
                             [
-                                dbc.AccordionItem(controls, title="Controls"),
+                                dbc.AccordionItem(controls, title="Φίλτρα"),
                             ]
                         )
                     ),

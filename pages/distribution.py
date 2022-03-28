@@ -38,7 +38,7 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Year"),
+                                    dbc.Label("Έτος"),
                                     dbc.Select(
                                         id="input-year",
                                         options=[
@@ -71,7 +71,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("NUTS"),
+                                    dbc.Label("Γεωγραφικές ενότητρες - NUTS"),
                                     dcc.Dropdown(
                                         options=nutsf.sort_values("NUTS_NAME")[
                                             "NUTS_NAME"
@@ -87,7 +87,7 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Products"),
+                                    dbc.Label("Προϊντα"),
                                     dcc.Dropdown(
                                         options=prods.index.unique(
                                             level="product_name"
@@ -101,7 +101,7 @@ def layout():
                     ),
                 ],
             ),
-            dbc.CardFooter(dbc.Button("Update", id="input-update")),
+            dbc.CardFooter(dbc.Button("Ενημέρωση", id="input-update")),
         ]
     )
 
@@ -112,7 +112,7 @@ def layout():
                     dbc.Col(
                         dbc.Accordion(
                             [
-                                dbc.AccordionItem(controls, title="Controls"),
+                                dbc.AccordionItem(controls, title="Φίλτρα"),
                             ]
                         )
                     ),
@@ -133,21 +133,21 @@ def layout():
                                                         id="distr-map",
                                                         style={"height": "40vh"},
                                                     ),
-                                                    width=4,
+                                                    width=3,
                                                 ),
                                                 dbc.Col(
                                                     dcc.Graph(
                                                         id="distr-barchart",
                                                         style={"height": "40vh"},
                                                     ),
-                                                    width=6,
+                                                    width=5,
                                                 ),
                                                 dbc.Col(
                                                     dcc.Graph(
                                                         id="distr-heatmap",
                                                         style={"height": "50vh"},
                                                     ),
-                                                    width=6,
+                                                    width=4,
                                                 ),
                                             ],
                                             justify="center",

@@ -36,7 +36,7 @@ def layout():
                         [
                             dbc.Col(
                                 [
-                                    dbc.Label("Παραγωγές/Ηαταναλώσεις"),
+                                    dbc.Label("Παραγωγές/Καταναλώσεις"),
                                     dcc.Dropdown(
                                         options=[
                                             {
@@ -69,7 +69,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Περίοδος ανάλυσης"),
+                                    dbc.Label("Περίοδος ανάλυσης (μήνες)"),
                                     dcc.RangeSlider(
                                         min=1,
                                         max=12,
@@ -140,7 +140,7 @@ def layout():
                 dbc.Row(
                     [
                         dbc.Col(
-                            dbc.Accordion(dbc.AccordionItem(controls, title="Controls"))
+                            dbc.Accordion(dbc.AccordionItem(controls, title="Φίλτρα"))
                         ),
                     ],
                     class_name="py-2",
@@ -157,7 +157,7 @@ def layout():
                                                 dbc.RadioItems(
                                                     options=[
                                                         {
-                                                            "label": "Χρόνο",
+                                                            "label": "Χρόνική περίοδο",
                                                             "value": "date",
                                                         },
                                                         {
