@@ -7,11 +7,12 @@ import dash_bootstrap_components as dbc
 from src.io import fetch_data
 
 # dash.register_page(__name__)
+descr = "Παραγωγή/Κατανάλωση"
 dash.register_page(
     __name__,
     path="/generation",
     name="generation",
-    description="Παραγωγή/Κατανάλωση",
+    description=descr,
     order=0,
     icon="fa fa-farm",
 )
@@ -137,10 +138,14 @@ def layout():
     layout = (
         html.Div(
             [
+                dbc.Row(html.H2("Παραγωγές και καταναλώσεις αγροτικών προϊοντων")),
                 dbc.Row(
                     [
                         dbc.Col(
-                            dbc.Accordion(dbc.AccordionItem(controls, title="Φίλτρα"))
+                            dbc.Accordion(
+                                dbc.AccordionItem(controls, title="Φίλτρα"),
+                                active_item=0,
+                            )
                         ),
                     ],
                     class_name="py-2",

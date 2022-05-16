@@ -55,7 +55,7 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("NUTS"),
+                                    dbc.Label("Περιοχή προέλευσης (NUTS)"),
                                     dcc.Dropdown(
                                         options=nuts.sort_values("NUTS_NAME")[
                                             "NUTS_NAME"
@@ -92,6 +92,9 @@ def layout():
     layout = html.Div(
         [
             dbc.Row(
+                [html.H2("Επιπτώσεις στο οδικό δίκτυο"), html.H4("(Φόρτιση δικτύου)")]
+            ),
+            dbc.Row(
                 [
                     dbc.Col(
                         dbc.Accordion(
@@ -118,7 +121,7 @@ def layout():
                                                             id="assign-map",
                                                             style={
                                                                 "height": "40vh",
-                                                                # "width": "100vh",
+                                                                "width": "100%",
                                                             },
                                                         )
                                                     ),

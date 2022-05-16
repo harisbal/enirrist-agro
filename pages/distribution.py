@@ -51,15 +51,15 @@ def layout():
                             ),
                             dbc.Col(
                                 [
-                                    dbc.Label("Παραγωγές/Καταναλώσεις"),
+                                    dbc.Label("Προελεύσεις/Προορισμοί"),
                                     dcc.Dropdown(
                                         options=[
                                             {
-                                                "label": "Παραγωγές",
+                                                "label": "Προελεύσεις",
                                                 "value": "origin",
                                             },
                                             {
-                                                "label": "Καταναλώσεις",
+                                                "label": "Προορισμοί",
                                                 "value": "destination",
                                             },
                                         ],
@@ -107,6 +107,12 @@ def layout():
 
     layout = html.Div(
         [
+            dbc.Row(
+                [
+                    html.H2("Γεωφραφική κατανομή αγροτικών προϊοντων"),
+                    html.H4("(Πίνακας προέλευσης προορισμού)"),
+                ]
+            ),
             dbc.Row(
                 [
                     dbc.Col(
@@ -197,8 +203,8 @@ def update_map(click, direction, products, sel_nuts):
     bbox = nutsf.total_bounds
     center = {"lat": (bbox[1] + bbox[3]) / 2, "lon": (bbox[0] + bbox[2]) / 2}
     if not color is None:
-        nutsf["color"] = nutsf.join(color, how="left")["quantity_tn"].fillna(0)
-        color = "color"
+        nutsf["quantity_tn"] = nutsf.join(color, how="left")["quantity_tn"].fillna(0)
+        color = "quantity_tn"
 
     nutsff = nutsf.loc[sel_nuts or slice(None)]
     fig_nuts = px.choropleth_mapbox(
